@@ -1,0 +1,24 @@
+# MCP config (contains API tokens)
+.mcp.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+
+# Temp extraction directories
+temp_*/
+temp_sample/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
