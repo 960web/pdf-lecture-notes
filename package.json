@@ -1,6 +1,6 @@
 {
   "name": "@960web/pdf-lecture-notes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Claude Code Skill：将图片型 PDF（教材、讲义、扫描文档）提取为结构化 Markdown 笔记",
   "keywords": [
     "claude-code",
