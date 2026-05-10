@@ -20,10 +20,11 @@
 
 1. Fork 本仓库
 2. 创建分支：`git checkout -b feat/your-feature`
-3. 修改 `SKILL.md`
-4. **测试**：用真实 PDF 跑一次完整流程，确认改动生效
-5. 提交：`git commit -m "feat: 描述改动"`
-6. 推送并创建 PR
+3. 修改 `skills/pdf-lecture-notes/SKILL.md`
+4. 如涉及 Plugin 元数据，同步更新 `.claude-plugin/plugin.json` 和 `package.json`
+5. **测试**：用真实 PDF 跑一次完整流程，确认改动生效
+6. 提交：`git commit -m "feat: 描述改动"`
+7. 推送并创建 PR
 
 ### SKILL.md 修改规范
 

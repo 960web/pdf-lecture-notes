@@ -4,6 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Skill Format](https://img.shields.io/badge/Skill%20Spec-agentskills.io-blue)](https://agentskills.io/specification)
+[![npm](https://img.shields.io/npm/v/@960web/pdf-lecture-notes)](https://www.npmjs.com/package/@960web/pdf-lecture-notes)
+[![skills.sh](https://img.shields.io/badge/skills.sh-install-black)](https://skills.sh)
 
 ## 这是什么
 
@@ -24,14 +26,51 @@
 
 ## 安装
 
+### 方式一：skills.sh（推荐，跨平台通用）
+
+```bash
+npx skills add 960web/pdf-lecture-notes
+```
+
+### 方式二：Claude Code Plugin Marketplace
+
+```bash
+# 添加 marketplace（如果还没加）
+/plugin marketplace add 960web/pdf-lecture-notes
+
+# 安装
+/plugin install pdf-lecture-notes@960web/pdf-lecture-notes
+```
+
+### 方式三：npm
+
+```bash
+npm install -g @960web/pdf-lecture-notes
+```
+
+### 方式四：OSM（Open Skills Manager）
+
+```bash
+osm install pdf-lecture-notes
+```
+
+### 方式五：手动安装
+
 ```bash
 # 安装到用户级（所有项目可用）
 mkdir -p ~/.claude/skills/pdf-lecture-notes
-cp SKILL.md ~/.claude/skills/pdf-lecture-notes/
+cp skills/pdf-lecture-notes/SKILL.md ~/.claude/skills/pdf-lecture-notes/
 
 # 或安装到项目级（仅当前项目）
 mkdir -p .claude/skills/pdf-lecture-notes
-cp SKILL.md .claude/skills/pdf-lecture-notes/
+cp skills/pdf-lecture-notes/SKILL.md .claude/skills/pdf-lecture-notes/
+```
+
+### 方式六：Cursor
+
+Settings → Rules → 导入 GitHub 仓库 URL：
+```
+https://github.com/960web/pdf-lecture-notes
 ```
 
 ## 前置依赖
@@ -53,13 +92,30 @@ cp SKILL.md .claude/skills/pdf-lecture-notes/
 
 ```
 pdf-lecture-notes/
-├── SKILL.md              # 核心 skill 文件
-├── README.md             # 本文件
-├── LICENSE               # MIT
-├── CONTRIBUTING.md       # 贡献指南
-├── CHANGELOG.md          # 版本记录
-└── .github/              # Issue/PR 模板
+├── .claude-plugin/
+│   └── plugin.json         # Claude Code Plugin 清单
+├── skills/
+│   └── pdf-lecture-notes/
+│       └── SKILL.md        # 核心 skill 文件
+├── package.json            # npm 包清单
+├── README.md               # 本文件
+├── LICENSE                 # MIT
+├── CONTRIBUTING.md         # 贡献指南
+├── CHANGELOG.md            # 版本记录
+└── .github/                # Issue/PR 模板
 ```
+
+## 分发渠道
+
+| 渠道 | 状态 | 安装命令 |
+|------|------|----------|
+| **skills.sh** | ✅ | `npx skills add 960web/pdf-lecture-notes` |
+| **Claude Code Marketplace** | ✅ | `/plugin install pdf-lecture-notes` |
+| **npm** | ✅ | `npm install @960web/pdf-lecture-notes` |
+| **OSM** | ✅ | `osm install pdf-lecture-notes` |
+| **SkillsMP** | ✅ | 自动收录 |
+| **SkillsGate** | ✅ | 自动收录 |
+| **GitHub** | ✅ | `git clone` + 手动安装 |
 
 ## 贡献
 

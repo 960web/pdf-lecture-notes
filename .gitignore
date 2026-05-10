@@ -15,6 +15,10 @@ temp_sample/
 .env
 .env.local
 
+# npm
+node_modules/
+package-lock.json
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,40 @@
+{
+  "name": "@960web/pdf-lecture-notes",
+  "version": "1.0.0",
+  "description": "Claude Code Skill：将图片型 PDF（教材、讲义、扫描文档）提取为结构化 Markdown 笔记",
+  "keywords": [
+    "claude-code",
+    "skill",
+    "pdf",
+    "ocr",
+    "markdown",
+    "notes",
+    "lecture-notes",
+    "paddleocr",
+    "agentskills"
+  ],
+  "homepage": "https://github.com/960web/pdf-lecture-notes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/960web/pdf-lecture-notes.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "友利奈绪可爱捏"
+  },
+  "files": [
+    "SKILL.md",
+    "skills/",
+    ".claude-plugin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "claude": {
+    "type": "skill",
+    "skillPath": "skills/pdf-lecture-notes/SKILL.md"
+  },
+  "agentskills": {
+    "specVersion": "1.0",
+    "skillPath": "skills/pdf-lecture-notes/SKILL.md"
+  }
+}
