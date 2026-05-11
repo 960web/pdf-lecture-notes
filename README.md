@@ -32,29 +32,19 @@
 npx skills add 960web/pdf-lecture-notes
 ```
 
-### 方式二：Claude Code Plugin Marketplace
-
-```bash
-# 添加 marketplace（如果还没加）
-/plugin marketplace add 960web/pdf-lecture-notes
-
-# 安装
-/plugin install pdf-lecture-notes@960web/pdf-lecture-notes
-```
-
-### 方式三：npm
+### 方式二：npm
 
 ```bash
 npm install -g @960web/pdf-lecture-notes
 ```
 
-### 方式四：OSM（Open Skills Manager）
+### 方式三：OSM（Open Skills Manager）
 
 ```bash
-osm install pdf-lecture-notes
+osm install 960web/pdf-lecture-notes
 ```
 
-### 方式五：手动安装
+### 方式四：手动安装
 
 ```bash
 # 安装到用户级（所有项目可用）
@@ -66,7 +56,7 @@ mkdir -p .claude/skills/pdf-lecture-notes
 cp skills/pdf-lecture-notes/SKILL.md .claude/skills/pdf-lecture-notes/
 ```
 
-### 方式六：Cursor
+### 方式五：Cursor
 
 Settings → Rules → 导入 GitHub 仓库 URL：
 ```
@@ -110,7 +100,7 @@ pdf-lecture-notes/
 | 渠道 | 状态 | 安装命令 |
 |------|------|----------|
 | **skills.sh** | ✅ | `npx skills add 960web/pdf-lecture-notes` |
-| **Claude Code Marketplace** | ✅ | `/plugin install pdf-lecture-notes` |
+
 | **npm** | ✅ | `npm install @960web/pdf-lecture-notes` |
 | **OSM** | ✅ | `osm install pdf-lecture-notes` |
 | **SkillsMP** | ✅ | 自动收录 |
