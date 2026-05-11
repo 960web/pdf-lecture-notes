@@ -97,15 +97,14 @@ pdf-lecture-notes/
 
 ## 分发渠道
 
-| 渠道 | 状态 | 安装命令 |
-|------|------|----------|
-| **skills.sh** | ✅ | `npx skills add 960web/pdf-lecture-notes` |
-
-| **npm** | ✅ | `npm install @960web/pdf-lecture-notes` |
-| **OSM** | ✅ | `osm install pdf-lecture-notes` |
-| **SkillsMP** | ✅ | 自动收录 |
-| **SkillsGate** | ✅ | 自动收录 |
-| **GitHub** | ✅ | `git clone` + 手动安装 |
+| 渠道 | 安装命令 |
+|------|----------|
+| **skills.sh** | `npx skills add 960web/pdf-lecture-notes` |
+| **npm** | `npm install @960web/pdf-lecture-notes` |
+| **OSM** | `osm install pdf-lecture-notes` |
+| **SkillsMP** | 自动收录 |
+| **SkillsGate** | 自动收录 |
+| **GitHub** | `git clone` + 手动安装 |
 
 ## 贡献
 
