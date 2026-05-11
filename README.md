@@ -82,11 +82,10 @@ https://github.com/960web/pdf-lecture-notes
 
 ```
 pdf-lecture-notes/
-├── .claude-plugin/
-│   └── plugin.json         # Claude Code Plugin 清单
 ├── skills/
 │   └── pdf-lecture-notes/
-│       └── SKILL.md        # 核心 skill 文件
+│       └── SKILL.md        # 核心 skill 文件（skills.sh 格式）
+├── SKILL.md                # 核心 skill 文件（根目录入口，兼容 OSM 等注册中心）
 ├── package.json            # npm 包清单
 ├── README.md               # 本文件
 ├── LICENSE                 # MIT
@@ -101,7 +100,7 @@ pdf-lecture-notes/
 |------|----------|
 | **skills.sh** | `npx skills add 960web/pdf-lecture-notes` |
 | **npm** | `npm install @960web/pdf-lecture-notes` |
-| **OSM** | `osm install pdf-lecture-notes` |
+| **OSM** | `osm install 960web/pdf-lecture-notes` |
 | **SkillsMP** | 自动收录 |
 | **SkillsGate** | 自动收录 |
 | **GitHub** | `git clone` + 手动安装 |

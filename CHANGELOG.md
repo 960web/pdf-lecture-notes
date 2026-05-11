@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2026-05-11
+
+### 多渠道分发支持
+
+- 新增 npm 包清单（`package.json`），发布至 npm registry
+- 调整目录结构兼容 skills.sh / OSM / SkillsMP / SkillsGate 等注册中心
+- 根目录保留 `SKILL.md` 入口，兼容要求根目录入口的注册中心
+
 ## [1.0.0] - 2026-05-11
 
 ### 初始版本

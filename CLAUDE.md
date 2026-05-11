@@ -4,7 +4,9 @@
 
 ## 核心文件
 
-- `SKILL.md` — Skill 定义文件，符合 agentskills.io 规范
+- `SKILL.md` — Skill 定义文件（根目录入口，兼容 OSM 等注册中心）
+- `skills/pdf-lecture-notes/SKILL.md` — Skill 定义文件（skills.sh 格式）
+- `package.json` — npm 包清单
 - `README.md` — 项目说明和安装指南
 - `CONTRIBUTING.md` — 贡献指南
 
