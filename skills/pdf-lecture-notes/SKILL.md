@@ -124,16 +124,19 @@ OCR 处理需要将页面图片发送至百度 AI Studio 云端服务器。在�
 
 ```bash
 ls -d temp_ch*/ temp_sample/ temp_lec*/ 讲义/*.md 笔记/*.md 2>/dev/null
+# 检查是否已有 OCR Agent 写入磁盘的 batch 文件：
+ls temp_ch*/batch_*.md 2>/dev/null
 ```
 
 如果发现已有进度文件：
 - 检查是否存在 `notes-plan.md`（已有的通用方案）
 - 列出已完成的章节和暂未处理的章节
+- **检查每个 `temp_chXX/` 目录下的 `batch_*.md` 文件** — 这些是 Agent 写入磁盘的 OCR 结果。如果某章所有 batch 文件都存在，说明 OCR 已完成，可直接进入合并步骤，无需重新 OCR
 - 询问用户：从断点继续还是重新开始？
 
-> 发现已有进度：已完成第 1-3 章，第 4-8 章未完成。是从第 4 章继续，还是重新开始？
+> 发现已有进度：已完成第 1-3 章，第 4-8 章未完成。其中 temp_ch04/ 内已有 batch_0030_0039.md 和 batch_0040_0049.md（OCR 已完成，可直接合并）。是从第 4 章继续合并，还是重新开始？
 
-如果继续，保留已有的 `notes-plan.md` 和临时文件，直接跳到 Phase 3 从断点处执行。
+如果继续，保留已有的 `notes-plan.md`、临时文件和 `batch_*.md` 文件，直接跳到 Phase 3 从断点处执行。
 
 **Step 2 — 打开 PDF，采集基本信息：**
 
@@ -389,28 +392,9 @@ Follow the universal plan exactly. Execute chapter 1 through the full pipeline:
 
 **If image-based PDF (the common case):**
 
-1. **提取页面为 PNG** — use fitz（含旋转校正）:
-```bash
-uv run python -c "
-import fitz, os
-doc = fitz.open('<PDF_PATH>')
-os.makedirs('temp_ch01', exist_ok=True)
-for i in range(<start_0indexed>, <end_0indexed>):
-    page = doc[i]
-    # 如果有旋转，先校正再提取
-    rot = page.rotation
-    if rot != 0:
-        page.set_rotation(0)
-    page.get_pixmap(dpi=200).save(f'temp_ch01/page_{i:04d}.png')
-    if rot != 0:
-        page.set_rotation(rot)  # 恢复原状
-print(f'Extracted {<end_0indexed> - <start_0indexed>} pages')
-"
-```
-
-2. **并行 OCR** — dispatch background agents (see Phase 3 batch dispatch template below), ~10 pages per agent
-
-3. **整合内容** — wait for all agents, merge their output following the universal plan structure
+1. **提取页面为 PNG** — 使用 fitz 提取（含旋转校正），命令同 Phase 3 Step 3.2，输出到 `temp_ch01/`
+2. **并行 OCR** — 按 Phase 3 的 Agent 派发模板派发后台 Agent，~10 页/批
+3. **整合内容** — 等待所有 Agent 完成，从 `temp_ch01/batch_*.md` 读取并按通用方案结构合并
 
 **If text-based PDF:** Just use the Read tool page by page.
 
@@ -468,12 +452,17 @@ For each chapter, follow the same pipeline as the pilot:
 3. 提取图片页为 PNG with fitz (200 DPI)，处理页面旋转
 4. Divide PNGs into batches of ~10 pages WITH 1-page overlap between adjacent batches
 5. Dispatch one background Agent per batch (ALL in parallel)
+   → Each agent writes its OCR result to temp_chXX/batch_XXXX_XXXX.md via Write tool
 6. Wait for ALL agents to complete — see failure recovery below
-7. Merge consolidated markdown + 文字页内容，按页码顺序组装
+7. Read each batch_*.md file from temp_chXX/ into the merge step
+   - Use the Read tool on each batch file, ordered by page range
+   - If a batch file is missing/empty: fall back to the agent's return message
+   - If neither is available: treat as failed batch, retry (see failure recovery)
+8. Merge consolidated markdown + 文字页内容，按页码顺序组装
    - Check for and resolve duplicated boundary content from overlap pages
    - Verify cross-page elements (formulas, tables, paragraphs) are intact
-8. Write the chapter notes file
-9. 可选：删除该章的临时 PNG（分批清理节省磁盘）
+9. Write the chapter notes file
+10. 可选：删除该章的临时 PNG（分批清理节省磁盘）
 ```
 
 **Overlap mechanism — critical for cross-page continuity:**
@@ -513,15 +502,28 @@ page in your final markdown.
 
 Consolidate ALL primary pages into ONE structured markdown response.
 Preserve formulas, tables, and special formatting exactly as OCR'd.
+
+CRITICAL — Save OCR result to disk: After consolidating, use the Write tool to save
+the complete OCR result as a local file:
+  /absolute/path/to/temp_chXX/batch_0030_0039.md
+The filename format is batch_<start_page>_<end_page>.md using 4-digit zero-padded
+fitz 0-indexed page numbers of your primary page range. This file is the ONLY durable
+copy — OCR results in the conversation context may be lost if the context compresses.
+Your return message should still include the full OCR result as a fallback.
 """
 )
 ```
+
+**After dispatching, record the expected batch file paths** so you know which files
+to read during the merge step. Each agent produces exactly one `batch_XXXX_XXXX.md`
+file in the chapter's `temp_chXX/` directory.
 
 **Critical rules for OCR calls:**
 - **`file_type="image"` is REQUIRED** for every PNG file. It is NOT auto-detected.
 - Use **absolute paths** (e.g., `/absolute/path/to/file.png`; on Windows use forward slashes: `C:/Users/.../file.png`)
 - **~10 primary pages + 1 overlap page per agent** — balance between parallelism and overhead
 - **All background agents dispatched in one message** — they run simultaneously
+- **Each agent MUST write its result to `temp_chXX/batch_XXXX_XXXX.md`** — do NOT depend solely on agent return messages for OCR results. The `.md` file on disk is the source of truth.
 - **Do NOT start merging until ALL agents complete** — wait for all notifications
 
 **Failure recovery:**
@@ -531,8 +533,9 @@ If any background agent fails (timeout, rate limit, crash):
 1. Note the exact batch (page range) and the error message
 2. Wait 30 seconds for rate-limit cooldown
 3. Re-dispatch **only the failed batch** as a new background agent (same overlap rule)
-4. Do NOT re-dispatch successful batches — their results are already available
-5. Continue merging when the retried batch completes
+   - The retried agent will overwrite the `batch_*.md` file (or create it if absent)
+4. Do NOT re-dispatch successful batches — their `batch_*.md` files already exist on disk
+5. Continue merging when the retried batch completes AND its `batch_*.md` file is confirmed present and non-empty
 6. If the same batch fails **3 times**, stop and ask the user how to proceed (e.g., reduce batch size, check API quota)
 
 **After each chapter (or batch), report progress:**
@@ -576,240 +579,49 @@ If the user wants a master index file, generate `README.md` in the output direct
 #### Step 4.4 — 清理临时文件
 
 ```bash
-# Remove all temp extraction directories
+# Remove all temp extraction directories (includes batch_*.md OCR intermediate files)
 rm -rf temp_ch*/ temp_sample/ temp_lec*/ temp_setup_test.png
 ```
+> `batch_*.md` 文件是 OCR 中间产物，已合并到最终笔记文件中。清理 temp_ch*/ 时会一并删除。
 
 #### Step 4.5 — Git 提交（可选）
 
 Ask the user if they want to commit the output files.
 
----
+## 常见错误与纠正
 
-## Quick Reference
-
-### fitz Extraction (Single Chapter — with rotation handling)
-
-```bash
-uv run python -c "
-import fitz, os
-doc = fitz.open('<PDF_PATH>')
-os.makedirs('<OUTPUT_DIR>', exist_ok=True)
-start, end = <START_0INDEXED>, <END_0INDEXED>
-for i in range(start, end):
-    page = doc[i]
-    rot = page.rotation
-    if rot != 0:
-        page.set_rotation(0)
-    page.get_pixmap(dpi=200).save(f'<OUTPUT_DIR>/page_{i:04d}.png')
-    if rot != 0:
-        page.set_rotation(rot)
-print(f'Done: {end-start} pages extracted to <OUTPUT_DIR>/')
-"
-```
-
-### Filename Sanitization (Python snippet)
-
-```python
-import re
-def safe_filename(title):
-    """Remove characters illegal in filenames across OS."""
-    return re.sub(r'[<>:\"/\\|?*]', '-', title).strip()
-```
-
-### fitz Extraction (Multiple Chapters / All at Once)
-
-```python
-import fitz, os
-
-doc = fitz.open('<PDF_PATH>')
-
-# Chapter definitions: (name, start_0indexed, end_0indexed)
-chapters = [
-    ('ch01', 10, 45),
-    ('ch02', 45, 80),
-    # ...
-]
-
-for name, start, end in chapters:
-    os.makedirs(f'temp_{name}', exist_ok=True)
-    for i in range(start, end):
-        doc[i].get_pixmap(dpi=200).save(f'temp_{name}/page_{i:04d}.png')
-    print(f'{name}: {end-start} pages extracted')
-
-doc.close()
-```
-
-### PaddleOCR-VL Call Format
-
-```
-mcp__PaddleOCR-VL__paddleocr_vl(
-  input_data: "/absolute/path/to/page.png"
-  file_type: "image"        # REQUIRED for PNG files — NOT auto-detected
-  output_mode: "simple"     # Clean markdown (use "detailed" only for layout analysis)
-)
-```
-> On Windows, use forward slashes: `C:/Users/.../file.png`
-
-### Batch Division Formula
-
-```
-Total pages ÷ 10 = number of agents (round up)
-Example: 35 pages → 4 agents × ~9 pages
-```
-
-### Agent Completion Flow
-
-```
-1. Extract pages to PNG, then divide into batches with 1-page overlap
-2. Dispatch all OCR agents with run_in_background: true
-3. Wait for system notifications for each agent
-4. If any agent failed: wait 30s, re-dispatch only the failed batch. Retry up to 3 times.
-5. Read each agent's consolidated markdown
-6. Merge into final chapter file following the universal plan
-   - Remove duplicated boundary content from overlap pages
-   - Verify cross-page elements are intact
-7. Verify: check page count, spot-check boundary pages for truncation
-```
-
-### fitz PDF Info Dump (Phase 0)
-
-```bash
-uv run python -c "
-import fitz, os
-doc = fitz.open('<PDF_PATH>')
-print(f'总页数: {doc.page_count}')
-print(f'加密: {doc.is_encrypted}')
-print(f'文件大小: {os.path.getsize(\"<PDF_PATH>\") / 1024 / 1024:.1f} MB')
-for i in range(min(5, doc.page_count)):
-    p = doc[i]
-    print(f'第{i+1}页: 旋转={p.rotation}°, 可提取文字={len(p.get_text())}字符')
-doc.close()
-"
-```
-
-### Sample Extraction for Analysis
-
-```bash
-uv run python -c "
-import fitz, os
-doc = fitz.open('<PDF_PATH>')
-os.makedirs('temp_sample', exist_ok=True)
-# Sample: first 3 pages + middle 3 pages + last 3 pages of chapter 1
-sample_pages = [10,11,12, 22,23,24, 37,38,39]
-for i in sample_pages:
-    doc[i].get_pixmap(dpi=200).save(f'temp_sample/page_{i:04d}.png')
-print('Sample pages extracted')
-"
-```
-
----
-
-## User Interaction Checklist
-
-### Phase 0 必须提问
-
-- [ ] ⚠️ 数据安全确认 — PDF 是否含敏感/机密信息（OCR 走百度 AI Studio 云端）
-- [ ] 中断恢复确认 — 如检测到已有进度，从断点继续还是重新开始？
-- [ ] PDF 密码（如果加密）
-- [ ] 磁盘空间 + API 配额 — 告知预估用量，确认是否继续
-- [ ] AI Studio access token（如果 MCP 未配置）
-
-### Phase 1 必须提问
-
-- [ ] **章节划分确认** — 展示从目录（或自动探测）得到的章节映射表，让用户纠正
-- [ ] 笔记的板块结构（展示推荐模板，让用户确认/调整）
-- [ ] 每种内容元素的取舍规则
-- [ ] 公式/特殊符号的格式规范
-- [ ] 输出目录和文件命名方式
-- [ ] **输出格式** — 仅 MD / MD+PDF（整体/分章节）
-- [ ] ⚠️ 复杂排版警告（如果采样发现多栏/混合排版）
-- [ ] 通用方案文档 → **必须等用户批准后再继续**
-
-### Phase 2 必须提问
-
-- [ ] Pilot章节完成 → 展示结果，等待反馈
-- [ ] 方案调整 → 记录修订内容
-
-### Phase 3 必须提问
-
-- [ ] 执行节奏选择（全量 / 分批 / 逐章）
-- [ ] 如果分批：每批几章
-- [ ] 如果逐章：是否每章后暂停确认
-
-### Phase 4 必须提问
-
-- [ ] 附录是否处理
-- [ ] 是否生成总目录索引
-- [ ] PDF 导出（如果在 Phase 1 选择了输出 PDF）
-- [ ] 是否清理临时文件
-- [ ] 是否 git 提交
-
----
-
-## Common Mistakes
-
-| Mistake | Fix |
-|---------|-----|
+| ❌ 错误做法 / 危险想法 | ✅ 正确做法 |
+|---------|---------|
 | Using `pdftoppm` / `pdf2image` | Use fitz (PyMuPDF) |
 | Running wrong Python command → ModuleNotFoundError | Detect package manager first (uv/pip/conda), use correct command |
 | Forgetting `file_type="image"` in PaddleOCR-VL | Always include `file_type="image"` for PNG inputs — it IS required, NOT auto-detected |
-| OCRing sequentially (one page at a time) | Batch ~10 pages per background agent |
-| Using sequential rounds of parallel MCP calls | Use background agents, NOT manual parallel call rounds |
-| Not using `run_in_background: true` | All OCR agents must be background for parallelism |
+| OCRing sequentially / "I'll process one at a time" | Batch ~10 pages per background agent |
+| Using sequential rounds of parallel MCP calls | Use background agents with `run_in_background: true` |
 | Setting DPI too low (<150) | Use 200 DPI minimum |
+| "5 pages per batch is safer" | 10 pages is the proven batch size. 5 doubles your agent count for no benefit. |
 | Confusing fitz 0-indexed pages with PDF reader 1-indexed | fitz page 0 = PDF page 1 displayed in reader |
 | Writing notes before all agents complete | Wait for ALL agent notifications before integrating |
-| Not extracting boundary pages for uncertain chapter borders | Always extract a few extra pages at chapter boundaries |
 | Hard page-split at batch boundaries → truncated content | Use 1-page overlap between adjacent batches |
 | Merge without deduplication → doubled boundary content | Strip overlap content from each batch's output during merge |
-| One agent fails → merge deadlocks forever | Retry failed batch up to 3 times with 30s cooldown; ask user if all retries fail |
+| One agent fails → merge deadlocks forever / "start over from scratch" | Retry only the failed batch up to 3 times with 30s cooldown; ask user if all retries fail |
 | Sending sensitive PDF to cloud OCR without warning | ALWAYS ask privacy question in Phase 0 before any OCR |
-| Hardcoding Windows paths in agent prompts | Use platform-agnostic absolute paths (forward slashes) |
-| Including appendix content as chapter content | Verify page ranges from TOC |
-| Skipping the plan step — jumping straight to extraction | Plan first, extract later |
-| Not asking the user about structure/format | Always ask the questions in Phase 1 |
+| Hardcoding Windows paths / "D:/ paths work on any OS" | Use forward-slashed absolute paths (e.g., `C:/Users/.../file.png`) |
+| Skipping the plan step / "PDF looks simple, skip sampling" | Plan first, extract later. Always sample. |
+| Not asking the user about structure/format / "I'll decide myself" | NEVER assume. Always ask. User is the domain expert. |
 | Writing chapter notes without user-approved plan | Get plan approved before touching any chapter |
 | Hardcoding API keys in code or config | Use placeholder `<YOUR_AI_STUDIO_ACCESS_TOKEN>` |
 | Making plan per-chapter instead of one universal plan | ONE plan document covers ALL chapters |
-| PDF has no TOC → giving up | Use auto-detection: text-density jumps, title sampling, page-number resets |
+| PDF has no TOC → giving up / "I'll guess chapter boundaries" | Use auto-detection: text-density jumps, title sampling, page-number resets |
 | All pages treated as images in mixed PDF | Detect text vs image pages; read text pages directly, only OCR image pages |
 | Not handling page rotation → sideways PNGs | Check `page.rotation` before extraction, correct if non-zero |
 | Chapter title has illegal filename chars → save fails | Sanitize filenames: replace `<>:\"/\\|?*` with `-` |
 | Not estimating disk space → runs out mid-extraction | Estimate upfront; warn if >5GB; offer lower DPI; clean up per-chapter |
 | API quota runs out mid-way → all work lost | Pre-check with single OCR test; monitor 402 errors; keep successful results |
+| Depending solely on agent return messages for OCR results | Agents MUST write results to `temp_chXX/batch_XXXX_XXXX.md` via Write tool. |
+| Not checking for batch_*.md files on interrupt recovery | If `batch_*.md` files already exist in a chapter's temp directory, OCR is done — skip to merge step. |
+| Forgetting to read batch_*.md files during merge | Use the Read tool on each `batch_*.md` file in page order. Agent return messages are fallback. |
 | Starting fresh when previous progress exists | Check for temp dirs/output files; ask user: resume or restart? |
 | Not asking about output format | Always ask: MD only or MD+PDF (combined or per-chapter) |
-
----
-
-## Red Flags — STOP and Check the Skill
-
-| Thought | Reality |
-|---------|---------|
-| "I'll skip the plan and just start extracting" | Plan is mandatory. Structure agreed before work begins. |
-| "This PDF is probably not sensitive, no need to ask" | You don't know. ALWAYS ask. Cloud OCR = data leaves the machine. |
-| "I'll call OCR in parallel rounds myself" | You'll burn context on raw OCR text and take 6× longer. Use background agents. |
-| "file_type is auto-detected, I can skip it" | It is NOT auto-detected. Must be `"image"` for every PNG call. |
-| "I'll use pdf2image/pdftoppm instead of fitz" | fitz is already in project deps. No system install needed. |
-| "5 pages per batch is safer" | 10 pages is the proven batch size. 5 doubles your agent count for no benefit. |
-| "I'll process them one at a time to be careful" | 80 pages × 15s each = 20 min sequential vs 3 min with 8 parallel agents. |
-| "The batches are exactly 10 pages, no need for overlap" | Adjacent batches WILL cut content. Always include 1-page overlap. |
-| "One agent failed, I'll just start over from scratch" | Only retry the failed batch. Successful results are already done. |
-| "Agent failed, I'll wait and hope it recovers" | Actively retry. Waiting forever = deadlock. |
-| "Let me write notes while agents are running" | Wait for ALL agents. Partial content leads to disorganized notes. |
-| "This PDF looks simple, I can skip the sampling" | Even simple PDFs have structural quirks. Always sample. |
-| "I'll decide the structure myself, user probably wants X" | NEVER assume. Always ask. |
-| "I know what the chapter structure should be" | You don't. The user is the domain expert. Ask. |
-| "I'll make a per-chapter plan for each one" | ONE universal plan covers ALL chapters. Don't duplicate work. |
-| "I'll use D:/ paths, it'll work on any OS" | Use forward-slashed absolute paths. The OS handles the conversion. |
-| "No TOC? I'll just guess the chapter boundaries" | Use text-density + title sampling. Don't guess. |
-| "Some pages have text, some are images — I'll just OCR everything" | Read text pages directly. Wasting OCR calls = slower + costs quota. |
-| "Page rotation doesn't matter, OCR can handle it" | Rotated pages produce wrong OCR. Fix rotation before extraction. |
-| "I don't need to sanitize the filename, the chapter title looks safe" | Always run sanitization. One `:` character breaks the file write. |
-| "The PDF is probably not that big, I'll skip the disk space check" | 500 pages × 200 DPI ≈ 2-3 GB. Check before you fill the disk. |
-| "I see temp files from before, I'll just delete them and start fresh" | They might be valid progress. Ask the user first. |
-| "I'll assume MD-only output, no need to ask about PDF" | Always ask. User may expect a printable PDF. |
 
 ---
 
@@ -820,6 +632,8 @@ Every OCR agent you dispatch MUST be told:
 - [ ] The exact list of PNG file paths (absolute paths) in page order
 - [ ] Which 1 overlap page to OCR for context (and that it must NOT appear in output)
 - [ ] To consolidate ALL primary pages into ONE structured markdown response
+- [ ] **To save the OCR result to disk** using the Write tool: `temp_chXX/batch_XXXX_XXXX.md`（start_page-end_page，4 位零填充），防止上下文压缩导致 OCR 结果丢失
+- [ ] To still include the full OCR result in the return message as a fallback
 - [ ] To preserve formulas, tables, and special formatting exactly as OCR'd
 - [ ] To organize content by the structure defined in the universal plan
 
