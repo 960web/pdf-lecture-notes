@@ -397,43 +397,46 @@ uv run python scripts/phase1_sample_pages.py <PDF_PATH> 12,13,14,26,27,28,39,40,
 
 #### Step 1.4 — 向用户提问，确定通用方案
 
-> ⛔ STOP — 采样完成。现在必须向用户逐一提问以下全部 7 类问题。禁止在用户回答之前编写方案文档或开始制作笔记。每类问题都必须等用户回复后才能问下一个。
+> ⛔ STOP — 采样完成。现在必须向用户逐一提问以下全部 6 类问题。禁止在用户回答之前编写方案文档或开始制作笔记。每类问题都必须等用户回复后才能问下一个。
 
 Based on what you learned from sampling, ask the user a structured set of questions. Present each question with a **recommended default** based on what you observed.
 
-**必须提问的内容（全部 7 类，缺一不可）：**
-
-**A. 笔记结构** — "每章的笔记文件用什么结构？"
-- 推荐基于你的采样观察给出一个结构模板
-- 让用户确认板块名称、顺序、是否所有板块都必需
-- 示例提问格式：
-  ```
-  基于采样，我看到每章包含以下元素：[列出元素]。
-  我建议每章笔记按此结构组织：
-  1. 章节标题 + 页码范围
-  2. 考情/概述
-  3. 知识结构图
-  4. 基础内容精讲（按知识点分节）
-  5. 例题精讲
-  6. 习题精练
-  7. 核心结论速查
-  
-  这个结构可以吗？有需要增删或调整顺序的吗？
-  ```
-
-**B. 内容取舍规则** — "哪些保留、哪些简化、哪些省略？"
-- 每种内容元素逐一确认
-- 示例：定义定理→完整摘录；例题→保留题目+解答；边栏→视重要性决定
+**必须提问的内容（全部 6 类，缺一不可）：**
 
 **C. 详略风格** — "详细精读笔记，还是简约速查笔记？"
 
 - **详细解释版**：保留原书完整叙述，段落式呈现定义、定理、推导，例题保留完整解答。适合初次学习。
-- **简约呈现版**：高度提炼，AI 根据内容类型自动选用格式（概念对比→表格，要点→列表，知识体系→缩进树形图，例题→只留思路和答案）。适合考前复习。
+- **简约呈现版**：高度提炼，AI 根据内容类型自动选用格式（概念对比→表格，要点→列表，知识体系→缩进文本树形图（嵌套 `-` 列表，不用 mermaid 也不用代码块），例题→只留思路和答案）。适合考前复习。
 
 示例提问：
   ```
   笔记详略偏好：(A) 详细解释版 — 完整叙述，适合初学 / (B) 简约呈现版 — 提炼要点，格式自动匹配，适合复习
   我建议：[根据 PDF 类型推荐]
+  ```
+
+> ⚠️ 风格必须最先确定，因为后续的结构和元素处理方式都由风格基调推导。
+
+**A+B. 笔记结构与元素处理方案** — 基于已选的风格，一次性给出完整方案。**不要重新列 Step 1.3 已识别的元素清单**，直接展示每个结构板块下各类元素怎么处理：
+
+示例提问：
+  ```
+  基于详细解释版的风格，以下是我对每章的完整方案：
+
+  1. 章节标题 + 页码范围（Pxx-Pxx）
+  2. 考情/概述
+  3. 知识结构图
+  4. 基础内容精讲（按知识点分节）
+     - 定义      → 完整摘录原文
+     - 定理/定律 → 完整摘录 + 推导过程
+     - 公式图表   → 保留，公式用 LaTeX
+  5. 例题精讲
+     - 例题      → 完整题目 + 详细解答步骤
+  6. 习题精练
+     - 思考题    → 仅列题目
+  7. 核心结论速查
+     - 本章小结  → 保留原文
+
+  结构、每类元素的处理方式都在这了。有需要调整的吗？
   ```
 
 **D. 公式/特殊符号处理规范** — "数学公式、化学式等用什么格式？"
@@ -445,14 +448,14 @@ Based on what you learned from sampling, ask the user a structured set of questi
 - 仅 Markdown（`.md` 文件）
 - Markdown + PDF（使用 Pandoc + XeLaTeX 渲染）
   - 如果输出 PDF：整个一份 PDF 还是各章节单独 PDF？
+  - 是否需要 PDF 目录？Pandoc `--toc` 参数可自动生成 PDF 书签目录
   - 需要安装 pandoc 和 texlive（或 MiKTeX）
 
 > 📌 如果用户选择输出 PDF，在方案文档中注明 PDF 生成方式。Phase 4 中执行 PDF 导出。
 
 **G. 其他约定** — 根据文档类型可能有额外问题：
 - 图表怎么处理（描述还是跳过）？
-- 原文中的交叉引用怎么处理？
-- 是否需要保留原书页码标注？
+- 其他学科特有的约定（如化学方程式、代码块等）
 
 #### Step 1.5 — 编写通用方案文档
 
@@ -461,13 +464,18 @@ Based on what you learned from sampling, ask the user a structured set of questi
 **File:** `notes-plan.md`（或用户指定名称），必须包含：
 1. **页码范围映射表** — 每章 PDF 页码和书页码
 2. **页面类型标记** — 图片页/文字页（混合 PDF）
-3. **笔记结构模板** — 用户确认的板块
-4. **详略风格** — 详细解释版 / 简约呈现版
-5. **内容取舍规则** — 每种元素怎么处理
-6. **格式规范** — 公式、图表、特殊符号
-7. **文件命名规则** — 输出目录和文件命名
-8. **输出格式** — 仅 MD / MD+PDF（Pandoc + XeLaTeX）
-9. **执行节奏** — 全量/分批/逐章（Phase 3 前确认）
+3. **详略风格** — 详细解释版 / 简约呈现版
+4. **笔记结构与元素处理方案** — 结构板块 + 每类元素处理方式（来自 C + A+B 的答案）
+5. **格式规范** — 写作时必须遵守的格式约定：
+   - **格式由内容类型决定**：对比关系→表格，并列要点→列表，层级体系→缩进列表（不用代码块），定义/推导→段落
+   - **分隔符规则**：页面间内容合并用两个换行分隔，禁止 `---` 水平线
+   - **树形图/结构图**：使用嵌套无序列表（`-` 缩进），不要用代码块包裹（会阻止 LaTeX 渲染）
+   - **公式/特殊符号**：LaTeX 写法、行内/行间约定
+   - **交叉引用**：原文中"见第X章"等引用如何处理
+   - **页码标注**：是否保留原书页码
+6. **文件命名规则** — 输出目录和文件命名
+7. **输出格式** — 仅 MD / MD+PDF（Pandoc + XeLaTeX）
+8. **执行节奏** — 全量/分批/逐章（Phase 3 前确认）
 
 > ⛔ STOP — 通用方案文档已生成，但禁止继续执行。必须向用户展示 notes-plan.md 的全部内容，等待用户明确说"批准"/"可以"/"继续"之后，才能进入 Phase 2。用户说"看看"或"嗯"不算批准。
 
@@ -483,7 +491,7 @@ Based on what you learned from sampling, ask the user a structured set of questi
 
 1. **按章切 PDF** — 用 Phase 3 的 fitz 命令提取第 1 章为 `temp_ch01/ch01.pdf`（含 overlap）
 2. **提交 API Job** — 按 Phase 3 Agent 派发模板派发后台 Agent
-3. **整合内容** — 等待 Agent 完成，从 `temp_ch01/chapter_ocr.md` 读取，剔除 overlap 页，按方案结构整理
+3. **整合内容** — 等待 Agent 完成，从 `temp_ch01/chapter_ocr.md` 读取，剔除 overlap 页，按 notes-plan.md 的结构（第 4 项）和格式规范（第 5 项）整理
 
 文字型 PDF 直接用 Read 工具逐页读取即可。
 
@@ -536,7 +544,7 @@ Update the plan document with the chosen strategy.
 5. 等待所有 Agent 完成（失败恢复见下方）
 6. Read 每个 chapter_ocr.md（缺失/空 → 用 Agent 返回消息 fallback → 仍无则重试）
 7. 剔除 overlap 页（JSONL 头尾），按页码组装，检查跨页元素完整性
-8. 写入章节笔记文件
+8. 写入章节笔记文件（严格按 notes-plan.md 第 4、5 项的结构和格式规范）
 9. 可选：删除该章临时 PDF（分批清理）
 ```
 
@@ -742,15 +750,23 @@ Agent 失败（超时/限流/崩溃）时：
 
 #### Step 4.3 — PDF 导出（Phase 1 选择输出 PDF 时）
 
+**单章 → PDF：**
 ```bash
-# 单章 → PDF
-pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" --pdf-engine=xelatex -C
-
-# 合并所有章 → 一个 PDF
-pandoc 讲义/第*.md -o 讲义/完整笔记.pdf --pdf-engine=xelatex -C
+pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" --pdf-engine=xelatex
 ```
 
-> 需要安装 texlive（或 MiKTeX）和 pandoc。XeLaTeX 引擎原生支持中文，无需额外配置。
+**合并所有章 → 一个 PDF：**
+（必须按章节号显式排序，避免 glob 字典序导致"第10章"排在"第2章"前）
+
+```bash
+# 按章节号升序拼接为中间文件
+cat 讲义/第1章*.md 讲义/第2章*.md 讲义/第3章*.md ... > 讲义/完整笔记.md
+# 中间文件 → PDF
+pandoc 讲义/完整笔记.md -o 讲义/完整笔记.pdf --pdf-engine=xelatex
+```
+
+> 如果用户需要目录，单章和合并命令都加 `--toc`。
+> 需要安装 texlive（或 MiKTeX）和 pandoc。如果中文渲染异常，用 `-V CJKmainfont="SimSun"`（Windows）或 `-V CJKmainfont="Noto Serif CJK SC"`（Linux/macOS）指定中文字体。
 
 #### Step 4.4 — 清理临时文件
 
@@ -774,7 +790,7 @@ rm -rf temp_ch*/ temp_sample/ temp_lec*/ scripts/ temp_setup_test.pdf
 | 合并时未剔除 overlap 页 | API 返回的 JSONL 头尾各 1 页是 overlap，合并时剔除 |
 | 切章 PDF 忘记 overlap 页 | fitz insert_pdf 时范围扩展 ±1 页（首章无前 overlap，末章无后 overlap）|
 | Job 失败整章重来 3 次仍失败 | 拆成 ~15 页子批重试，或手动排查该章 |
-| PDF 导出不用 Pandoc | 仅使用 pandoc --pdf-engine=xelatex |
+| PDF 导出不用 Pandoc，或用 glob 通配符合并 PDF | 用 pandoc --pdf-engine=xelatex，合并时按章节号显式排序（cat 第1章*.md 第2章*.md ...），不依赖 shell glob，按需加 --toc |
 | 通篇套用同一种格式（全段落或全列表） | 格式由内容类型决定：对比→表格，要点→列表，体系→树形图，定义→段落 |
 | AI 跳过 Phase 1 提问直接干活 | 看到 ⛔ STOP 标记必须停下来问用户 |
 | 混淆 fitz 0-indexed 和 PDF 阅读器 1-indexed | fitz page 0 = PDF 阅读器第 1 页 |
