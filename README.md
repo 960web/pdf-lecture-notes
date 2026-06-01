@@ -67,10 +67,10 @@ https://github.com/960web/pdf-lecture-notes
 
 | 依赖 | 用途 | 安装 |
 |------|------|------|
-| **uv** | Python 包管理器 + MCP 启动器 | `pip install uv` 或参见 [uv 文档](https://docs.astral.sh/uv/) |
-| **PyMuPDF (fitz)** | PDF 页面提取为 PNG | `uv add pymupdf` |
-| **PaddleOCR-VL MCP** | OCR 识别 | 需注册 [百度 AI Studio](https://aistudio.baidu.com/) 获取 Access Token |
-| **百度 AI Studio** | OCR 云端服务 | 注册后按 skill 引导配置 `.mcp.json` |
+| **uv** | Python 包管理器 | `pip install uv` 或参见 [uv 文档](https://docs.astral.sh/uv/) |
+| **PyMuPDF (fitz)** | PDF 按章切分、页面分析 | `uv add pymupdf` |
+| **PaddleOCR-VL API** | OCR 识别（百度 AI Studio 云端） | 需注册 [百度 AI Studio](https://aistudio.baidu.com/) 获取 Access Token |
+| **百度 AI Studio** | OCR 云端服务 | 注册后将 token 写入 `.env` 文件 |
 
 ## 快速开始
 

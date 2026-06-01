@@ -612,7 +612,7 @@ with open('.env') as f:
 TOKEN = os.environ['PADDLEOCR_AISTUDIO_ACCESS_TOKEN']
 
 JOB_URL = 'https://paddleocr.aistudio-app.com/api/v2/ocr/jobs'
-MODEL = 'PaddleOCR-VL-1.5'
+MODEL = 'PaddleOCR-VL-1.6'
 PDF_PATH = sys.argv[1]
 OUTPUT_MD = sys.argv[2]
 OUTPUT_IMG_DIR = sys.argv[3]
