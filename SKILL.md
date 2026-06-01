@@ -424,8 +424,8 @@ Based on what you learned from sampling, ask the user a structured set of questi
 
   1. 章节标题 + 页码范围（Pxx-Pxx）
   2. 考情/概述
-  3. 知识结构图
-  4. 基础内容精讲（按知识点分节）
+  3. 知识结构图（嵌套 `-` 列表，含具体概念名称及知识点间层级关系）
+  4. 知识点梳理（按知识点分节）
      - 定义      → 完整摘录原文
      - 定理/定律 → 完整摘录 + 推导过程
      - 公式图表   → 保留，公式用 LaTeX
@@ -473,6 +473,7 @@ Based on what you learned from sampling, ask the user a structured set of questi
    - **公式/特殊符号**：LaTeX 写法、行内/行间约定
    - **交叉引用**：原文中"见第X章"等引用如何处理
    - **页码标注**：是否保留原书页码
+   - **空行规则**：列表、代码块、表格等块级元素前必须加空行，否则 Pandoc 转 PDF 后格式丢失变为正文段落
 6. **文件命名规则** — 输出目录和文件命名
 7. **输出格式** — 仅 MD / MD+PDF（Pandoc + XeLaTeX）
 8. **执行节奏** — 全量/分批/逐章（Phase 3 前确认）
@@ -750,9 +751,31 @@ Agent 失败（超时/限流/崩溃）时：
 
 #### Step 4.3 — PDF 导出（Phase 1 选择输出 PDF 时）
 
+先创建 LaTeX 导言区文件（控制字体、数学、列表紧凑度）：
+
+```bash
+cat > pandoc-header.tex << 'TEXEOF'
+\usepackage{xeCJK}
+\setCJKmainfont{SimSun}
+\setCJKsansfont{Microsoft YaHei}
+\setCJKmonofont{FangSong}
+\usepackage{unicode-math}
+\setmathfont{Latin Modern Math}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\setlist[itemize,1]{itemsep=0.15em,topsep=0.15em,parsep=0.05em}
+\setlist[itemize,2]{itemsep=0.1em,topsep=0.1em,parsep=0.03em}
+\setlist[enumerate,1]{itemsep=0.15em,topsep=0.15em,parsep=0.05em}
+\setlist[enumerate,2]{itemsep=0.1em,topsep=0.1em,parsep=0.03em}
+\setlength{\parskip}{0.1em}
+TEXEOF
+```
+
 **单章 → PDF：**
 ```bash
-pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" --pdf-engine=xelatex
+pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" \
+  --pdf-engine=xelatex --include-in-header=pandoc-header.tex
 ```
 
 **合并所有章 → 一个 PDF：**
@@ -762,11 +785,12 @@ pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" --pdf-engine=xe
 # 按章节号升序拼接为中间文件
 cat 讲义/第1章*.md 讲义/第2章*.md 讲义/第3章*.md ... > 讲义/完整笔记.md
 # 中间文件 → PDF
-pandoc 讲义/完整笔记.md -o 讲义/完整笔记.pdf --pdf-engine=xelatex
+pandoc 讲义/完整笔记.md -o 讲义/完整笔记.pdf \
+  --pdf-engine=xelatex --include-in-header=pandoc-header.tex
 ```
 
 > 如果用户需要目录，单章和合并命令都加 `--toc`。
-> 需要安装 texlive（或 MiKTeX）和 pandoc。如果中文渲染异常，用 `-V CJKmainfont="SimSun"`（Windows）或 `-V CJKmainfont="Noto Serif CJK SC"`（Linux/macOS）指定中文字体。
+> 需要安装 texlive（或 MiKTeX）和 pandoc。
 
 #### Step 4.4 — 清理临时文件
 
@@ -790,7 +814,7 @@ rm -rf temp_ch*/ temp_sample/ temp_lec*/ scripts/ temp_setup_test.pdf
 | 合并时未剔除 overlap 页 | API 返回的 JSONL 头尾各 1 页是 overlap，合并时剔除 |
 | 切章 PDF 忘记 overlap 页 | fitz insert_pdf 时范围扩展 ±1 页（首章无前 overlap，末章无后 overlap）|
 | Job 失败整章重来 3 次仍失败 | 拆成 ~15 页子批重试，或手动排查该章 |
-| PDF 导出不用 Pandoc，或用 glob 通配符合并 PDF | 用 pandoc --pdf-engine=xelatex，合并时按章节号显式排序（cat 第1章*.md 第2章*.md ...），不依赖 shell glob，按需加 --toc |
+| PDF 导出不用 Pandoc，或用 glob 通配符合并 PDF | 用 pandoc --pdf-engine=xelatex --include-in-header=pandoc-header.tex，合并时按章节号显式排序（cat 第1章*.md 第2章*.md ...），按需加 --toc |
 | 通篇套用同一种格式（全段落或全列表） | 格式由内容类型决定：对比→表格，要点→列表，体系→树形图，定义→段落 |
 | AI 跳过 Phase 1 提问直接干活 | 看到 ⛔ STOP 标记必须停下来问用户 |
 | 混淆 fitz 0-indexed 和 PDF 阅读器 1-indexed | fitz page 0 = PDF 阅读器第 1 页 |
