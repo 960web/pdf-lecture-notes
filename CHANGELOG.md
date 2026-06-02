@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.1] - 2026-06-03
+
+### 树形图格式最终方案
+
+- 树形图改用全角空格 `　` 缩进 + 尾 `\` 换行，Typora 和 Pandoc/LaTeX 均正常渲染，无分点符
+- 5 个引用位置同步更新（详细版、简约版、A+B 模板、格式映射、规则+示例）
+
+### PDF 导出优化
+
+- pandoc-header.tex：`newunicodechar` 逐字映射 4 行 → `\xeCJKDeclareCharClass{CJK}{"2500->"257F}` 一行覆盖整个 Box Drawing 区间
+- Pandoc 命令加 `-V fontsize=10pt -V linestretch=0.8`，字号行距由参数控制
+- 删除"单章 → PDF"命令（只需合并版 PDF）
+
+### 冗余清理
+
+- 删除"整个一份 PDF 还是各章节单独 PDF？"提问
+- 错误表 Pandoc 命令同步补全 fontsize/linestretch 参数
+
 ## [1.1.0] - 2026-06-02
 
 ### 工作流精简
