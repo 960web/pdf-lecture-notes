@@ -405,8 +405,8 @@ Based on what you learned from sampling, ask the user a structured set of questi
 
 **C. 详略风格** — "详细精读笔记，还是简约速查笔记？"
 
-- **详细解释版**：保留原书完整叙述，段落式呈现定义、定理、推导，知识体系以 `├─` / `└─` 连线符号树形图呈现，例题保留完整解答。适合初次学习。
-- **简约呈现版**：高度提炼，AI 根据内容类型自动选用格式（概念对比→表格，要点→列表，知识体系→纯文本树形图（`├─` / `└─` 连线符号 + 缩进，不用 mermaid 也不用代码块），例题→只留思路和答案）。适合考前复习。
+- **详细解释版**：保留原书完整叙述，段落式呈现定义、定理、推导，知识体系以 `├─` / `└─` 连线符号树形图呈现（全角空格 `　` 缩进 + 尾 `\` 换行），例题保留完整解答。适合初次学习。
+- **简约呈现版**：高度提炼，AI 根据内容类型自动选用格式（概念对比→表格，要点→列表，知识体系→纯文本树形图（全角空格 `　` 缩进 + `├─`/`└─` 连线符号 + 尾 `\` 换行，不用 mermaid 也不用代码块），例题→只留思路和答案）。适合考前复习。
 
 示例提问：
   ```
@@ -424,7 +424,7 @@ Based on what you learned from sampling, ask the user a structured set of questi
 
   1. 章节标题 + 页码范围（Pxx-Pxx）
   2. 考情/概述
-  3. 知识结构图（`├─` / `└─` 连线符号 + 缩进表示层级，含具体概念名称及知识点关系，不用代码块）
+  3. 知识结构图（全角空格 `　` 缩进 + `├─`/`└─` 连线符号 + 尾 `\` 换行表示层级，含具体概念名称及知识点关系，不用代码块）
   4. 知识点梳理（按知识点分节）
      - 定义      → 完整摘录原文
      - 定理/定律 → 完整摘录 + 推导过程
@@ -447,7 +447,6 @@ Based on what you learned from sampling, ask the user a structured set of questi
 **F. 输出格式** — "最终产出什么格式？"
 - 仅 Markdown（`.md` 文件）
 - Markdown + PDF（使用 Pandoc + XeLaTeX 渲染）
-  - 如果输出 PDF：整个一份 PDF 还是各章节单独 PDF？
   - 是否需要 PDF 目录？Pandoc `--toc` 参数可自动生成 PDF 书签目录
   - 需要安装 pandoc 和 texlive（或 MiKTeX）
 
@@ -467,15 +466,18 @@ Based on what you learned from sampling, ask the user a structured set of questi
 3. **详略风格** — 详细解释版 / 简约呈现版
 4. **笔记结构与元素处理方案** — 结构板块 + 每类元素处理方式（来自 C + A+B 的答案）
 5. **格式规范** — 写作时必须遵守的格式约定：
-   - **格式由内容类型决定**：对比关系→表格，并列要点→列表，层级体系→树形图（纯文本 `├─`/`└─` 连线符号，不用代码块），定义/推导→段落
+   - **格式由内容类型决定**：对比关系→表格，并列要点→列表，层级体系→树形图（全角空格 `　` 缩进 + `├─`/`└─` 连线符号 + 尾 `\` 换行，不用代码块），定义/推导→段落
    - **分隔符规则**：页面间内容合并用两个换行分隔，禁止 `---` 水平线
-   - **树形图/结构图**：纯文本缩进 + 连线符号模拟树状结构。同级最后一项用 `└─`，其余用 `├─`，父级延续用 `│`。**绝对不要用代码块包裹**（会阻止 LaTeX 公式渲染）。示例：
+   - **树形图/结构图**：全角空格 `　` 缩进表示层级，每行以 `├─` / `└─` / `│` 连线符号连接，行尾 `\` 强制换行。同级最后一项用 `└─`，其余用 `├─`，父级延续用 `│`。**绝对不要用代码块包裹**（会阻止 LaTeX 公式渲染）。示例：
      ```
-     - ├─ 力学基础
-     - │  ├─ 牛顿第一定律（$F=0$ 时物体保持静止或匀速直线运动）
-     - │  └─ 牛顿第二定律（$F=ma$）
-     - └─ 运动学
+     第一章 知识体系 \
+     　├─ 力学基础 \
+     　│　├─ 牛顿第一定律（$F=0$ 时物体保持静止或匀速直线运动） \
+     　│　│　└─ 惯性参考系 \
+     　│　└─ 牛顿第二定律（$F=ma$） \
+     　└─ 运动学
      ```
+     > 全角空格在 Typora 和 Pandoc/LaTeX 中均保留层级缩进，`\` 实现硬换行，无分点符，LaTeX 公式正常渲染。
    - **公式/特殊符号**：LaTeX 写法、行内/行间约定
    - **交叉引用**：原文中"见第X章"等引用如何处理
    - **页码标注**：是否保留原书页码
@@ -775,13 +777,10 @@ cat > pandoc-header.tex << 'TEXEOF'
 \setlist[enumerate,1]{itemsep=0.15em,topsep=0.15em,parsep=0.05em}
 \setlist[enumerate,2]{itemsep=0.1em,topsep=0.1em,parsep=0.03em}
 \setlength{\parskip}{0.1em}
-TEXEOF
-```
 
-**单章 → PDF：**
-```bash
-pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" \
-  --pdf-engine=xelatex --include-in-header=pandoc-header.tex
+% 强制将制表符区间划归为 CJK 中文汉字类，xeCJK 用中文字体渲染，解决 PDF 连线空白问题
+\xeCJKDeclareCharClass{CJK}{"2500->"257F}
+TEXEOF
 ```
 
 **合并所有章 → 一个 PDF：**
@@ -792,10 +791,13 @@ pandoc "讲义/第X章-标题.md" -o "讲义/第X章-标题.pdf" \
 cat 讲义/第1章*.md 讲义/第2章*.md 讲义/第3章*.md ... > 讲义/完整笔记.md
 # 中间文件 → PDF
 pandoc 讲义/完整笔记.md -o 讲义/完整笔记.pdf \
-  --pdf-engine=xelatex --include-in-header=pandoc-header.tex
+  --pdf-engine=xelatex \
+  --include-in-header=pandoc-header.tex \
+  -V fontsize=10pt \
+  -V linestretch=0.8
 ```
 
-> 如果用户需要目录，单章和合并命令都加 `--toc`。
+> 如果用户需要目录，合并命令加 `--toc`。
 > 需要安装 texlive（或 MiKTeX）和 pandoc。
 
 #### Step 4.4 — 清理临时文件
@@ -820,7 +822,7 @@ rm -rf temp_ch*/ temp_sample/ temp_lec*/ scripts/ temp_setup_test.pdf
 | 合并时未剔除 overlap 页 | API 返回的 JSONL 头尾各 1 页是 overlap，合并时剔除 |
 | 切章 PDF 忘记 overlap 页 | fitz insert_pdf 时范围扩展 ±1 页（首章无前 overlap，末章无后 overlap）|
 | Job 失败整章重来 3 次仍失败 | 拆成 ~15 页子批重试，或手动排查该章 |
-| PDF 导出不用 Pandoc，或用 glob 通配符合并 PDF | 用 pandoc --pdf-engine=xelatex --include-in-header=pandoc-header.tex，合并时按章节号显式排序（cat 第1章*.md 第2章*.md ...），按需加 --toc |
+| PDF 导出不用 Pandoc，或用 glob 通配符合并 PDF | 用 pandoc --pdf-engine=xelatex --include-in-header=pandoc-header.tex -V fontsize=10pt -V linestretch=0.8，合并时按章节号显式排序（cat 第1章*.md 第2章*.md ...），按需加 --toc |
 | 通篇套用同一种格式（全段落或全列表） | 格式由内容类型决定：对比→表格，要点→列表，体系→树形图，定义→段落 |
 | AI 跳过 Phase 1 提问直接干活 | 看到 ⛔ STOP 标记必须停下来问用户 |
 | 混淆 fitz 0-indexed 和 PDF 阅读器 1-indexed | fitz page 0 = PDF 阅读器第 1 页 |
