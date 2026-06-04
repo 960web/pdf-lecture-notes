@@ -763,6 +763,7 @@ Agent 失败（超时/限流/崩溃）时：
 
 ```bash
 cat > pandoc-header.tex << 'TEXEOF'
+\usepackage[margin=2cm]{geometry}
 \usepackage{xeCJK}
 \setCJKmainfont{SimSun}
 \setCJKsansfont{Microsoft YaHei}
